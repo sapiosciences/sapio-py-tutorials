@@ -96,6 +96,8 @@ config.register('/new_goo', NewGooOnSaveRuleHandler)
 config.register('/eln/rule_test', ExperimentRuleHandler)
 
 app = WebhookServerFactory.configure_flask_app(app=None, config=config)
+# UNENCRYPTED! This should not be used in production. You should give the "app" a ssl_context or set up a reverse-proxy.
+
 # Dev Mode:
 # app.run(host="0.0.0.0", port=8090)
 
