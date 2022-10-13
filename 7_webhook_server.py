@@ -1,5 +1,6 @@
 from typing import List, Dict, Any
 
+from sapiopylib.rest.DataMgmtService import DataMgmtServer
 from sapiopylib.rest.WebhookService import AbstractWebhookHandler, WebhookConfiguration, WebhookServerFactory
 from sapiopylib.rest.pojo.datatype.FieldDefinition import VeloxBooleanFieldDefinition, VeloxStringFieldDefinition
 from sapiopylib.rest.pojo.webhook.ClientCallbackRequest import FormEntryDialogRequest
@@ -72,10 +73,27 @@ class NewGooOnSaveRuleHandler(AbstractWebhookHandler):
         return SapioWebhookResult(True, display_text="New Goo!")
 
 
+class ExperimentRuleHandler(AbstractWebhookHandler):
+    """
+    The entry and notebook that triggered the rule will be on the context.
+    """
+
+    def run(self, context: SapioWebhookContext) -> SapioWebhookResult:
+        print("Experiment Entries of Rule: " + ','.join([entry.entry_name for entry in context.experiment_entry_list]))
+        print("Notebook Experiment of Rule: " + context.eln_experiment.notebook_experiment_name)
+        entry = context.experiment_entry_list[0]
+        eln_manager = DataMgmtServer.get_eln_manager(context.user)
+        records = eln_manager.get_data_records_for_entry(context.eln_experiment.notebook_experiment_id, entry.entry_id)
+        print("Record Values were: " + ','.join([str(record.get_field_value('NewField'))
+                                                 for record in records.result_list]))
+        return SapioWebhookResult(True)
+
+
 config: WebhookConfiguration = WebhookConfiguration(verify_sapio_cert=False, debug=True)
 config.register('/hello_world', HelloWorldWebhookHandler)
 config.register('/feedback_form', UserFeedbackHandler)
 config.register('/new_goo', NewGooOnSaveRuleHandler)
+config.register('/eln/rule_test', ExperimentRuleHandler)
 
 app = WebhookServerFactory.configure_flask_app(app=None, config=config)
 # Dev Mode:
