@@ -88,6 +88,9 @@ class ExperimentRuleHandler(AbstractWebhookHandler):
                                                  for record in records.result_list]))
         return SapioWebhookResult(True)
 
+# Note: the registration points here are directly under root.
+# In this example, we are listening to 8090. So the endpoint URL to be configured in Sapio is:
+# http://[webhook_server_hostname]:8090/hello_world
 
 config: WebhookConfiguration = WebhookConfiguration(verify_sapio_cert=False, debug=True)
 config.register('/hello_world', HelloWorldWebhookHandler)
