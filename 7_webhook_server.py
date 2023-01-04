@@ -1,3 +1,4 @@
+from datetime import date
 from typing import List, Dict, Any
 
 from sapiopylib.rest.DataMgmtService import DataMgmtServer
@@ -9,7 +10,8 @@ from sapiopylib.rest.pojo.webhook.ClientCallbackResult import FormEntryDialogRes
 from sapiopylib.rest.pojo.webhook.WebhookContext import SapioWebhookContext
 from sapiopylib.rest.pojo.webhook.WebhookResult import SapioWebhookResult
 from sapiopylib.rest.utils.FormBuilder import FormBuilder
-from sapiopylib.rest.utils.Protocols import AbstractProtocol
+from sapiopylib.rest.utils.ProtocolUtils import ELNStepFactory
+from sapiopylib.rest.utils.Protocols import AbstractProtocol, ElnExperimentProtocol
 from waitress import serve
 
 
@@ -91,7 +93,7 @@ class ExperimentRuleHandler(AbstractWebhookHandler):
         return SapioWebhookResult(True)
 
 
-class NotebookExperimentToolbarExampleHandler(AbstractWebhookHandler):
+class ElnSampleAliquotRatioCountHandler(AbstractWebhookHandler):
     """
     Find the source sample table in the notebook experiment. Count how many samples there are.
     Then, see if there are aliquots. If there are aliquots, print aliquot/sample ratio.
@@ -115,6 +117,27 @@ class NotebookExperimentToolbarExampleHandler(AbstractWebhookHandler):
                                                      str(aliquot_sample_record_count / source_sample_record_count))
 
 
+class ElnStepCreationHandler(AbstractWebhookHandler):
+    """
+    Here are examples on how to use the protocol/step interfaces to easily create new steps in ELN.
+    """
+
+    def run(self, context: SapioWebhookContext) -> SapioWebhookResult:
+        # noinspection PyTypeChecker
+        active_protocol: ElnExperimentProtocol = context.active_protocol
+        # We will create a Request form.
+        request_record = context.data_record_manager.add_data_record('Request')
+        request_record.set_field_value('RequestId', 'Python Webhook Demo Request ' + str(date.today()))
+        context.data_record_manager.commit_data_records([request_record])
+        ELNStepFactory.create_form_step(active_protocol, 'Request Data', 'Request', request_record)
+        # Now, create another empty sample table under request form. This will be created after the last form.
+        # Note: the cache for protocol provided is invalidated upon creating a new step,
+        # but any other protocol references to the same protocol will not.
+        ELNStepFactory.create_table_step(active_protocol, 'Samples', 'Sample')
+        ELNStepFactory.create_text_entry(active_protocol, 'Hello World!')
+        return SapioWebhookResult(True)
+
+
 # Note: the registration points here are directly under root.
 # In this example, we are listening to 8090. So the endpoint URL to be configured in Sapio is:
 # http://[webhook_server_hostname]:8090/hello_world
@@ -124,7 +147,8 @@ config.register('/hello_world', HelloWorldWebhookHandler)
 config.register('/feedback_form', UserFeedbackHandler)
 config.register('/new_goo', NewGooOnSaveRuleHandler)
 config.register('/eln/rule_test', ExperimentRuleHandler)
-config.register('/eln/sample_aliquot_count', NotebookExperimentToolbarExampleHandler)
+config.register('/eln/sample_aliquot_count', ElnSampleAliquotRatioCountHandler)
+config.register('/eln/create_new_steps', ElnStepCreationHandler)
 
 app = WebhookServerFactory.configure_flask_app(app=None, config=config)
 # UNENCRYPTED! This should not be used in production. You should give the "app" a ssl_context or set up a reverse-proxy.
