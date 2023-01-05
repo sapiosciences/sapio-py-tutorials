@@ -10,6 +10,7 @@ from sapiopylib.rest.pojo.webhook.ClientCallbackResult import FormEntryDialogRes
 from sapiopylib.rest.pojo.webhook.WebhookContext import SapioWebhookContext
 from sapiopylib.rest.pojo.webhook.WebhookResult import SapioWebhookResult
 from sapiopylib.rest.utils.FormBuilder import FormBuilder
+from sapiopylib.rest.utils.FoundationAccessioning import FoundationAccessionManager
 from sapiopylib.rest.utils.ProtocolUtils import ELNStepFactory
 from sapiopylib.rest.utils.Protocols import AbstractProtocol, ElnExperimentProtocol
 from waitress import serve
@@ -138,6 +139,33 @@ class ElnStepCreationHandler(AbstractWebhookHandler):
         return SapioWebhookResult(True)
 
 
+class ElnSampleCreationHandler(AbstractWebhookHandler):
+    """
+    Create a sample step if not exists, and then accession 8 blood samples.
+    """
+
+    def run(self, context: SapioWebhookContext) -> SapioWebhookResult:
+        # noinspection PyTypeChecker
+        active_protocol: ElnExperimentProtocol = context.active_protocol
+        sample_step = active_protocol.get_first_step_of_type('Sample')
+        if sample_step is None:
+            sample_step = ELNStepFactory.create_table_step(active_protocol, 'Samples', 'Sample')
+        sample_fields: List[Dict[str, Any]] = []
+        num_samples = 8
+        accession_man: FoundationAccessionManager = FoundationAccessionManager(context.user)
+        sample_id_list: List[str] = accession_man.get_accession_with_config_list('Sample', 'SampleId', num_samples)
+        for sample_id in sample_id_list:
+            sample_field = {
+                'ExemplarSampleType': 'Blood',
+                'SampleId': sample_id
+            }
+            sample_fields.append(sample_field)
+        sample_records = context.data_record_manager.add_data_records_with_data('Sample', sample_fields)
+        context.eln_manager.add_records_to_table_entry(active_protocol.eln_experiment.notebook_experiment_id,
+                                                       sample_step.eln_entry.entry_id, sample_records)
+        return SapioWebhookResult(True)
+
+
 # Note: the registration points here are directly under root.
 # In this example, we are listening to 8090. So the endpoint URL to be configured in Sapio is:
 # http://[webhook_server_hostname]:8090/hello_world
@@ -149,6 +177,7 @@ config.register('/new_goo', NewGooOnSaveRuleHandler)
 config.register('/eln/rule_test', ExperimentRuleHandler)
 config.register('/eln/sample_aliquot_count', ElnSampleAliquotRatioCountHandler)
 config.register('/eln/create_new_steps', ElnStepCreationHandler)
+config.register('/eln/sample_creation', ElnSampleCreationHandler)
 
 app = WebhookServerFactory.configure_flask_app(app=None, config=config)
 # UNENCRYPTED! This should not be used in production. You should give the "app" a ssl_context or set up a reverse-proxy.
