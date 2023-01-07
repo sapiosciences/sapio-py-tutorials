@@ -166,6 +166,22 @@ class ElnSampleCreationHandler(AbstractWebhookHandler):
         return SapioWebhookResult(True)
 
 
+class BarChartDashboardCreationHandler(AbstractWebhookHandler):
+    """
+    Provide a bar chart for a sample table where x-axis is sample ID and y-axis is concentration.
+    """
+
+    def run(self, context: SapioWebhookContext) -> SapioWebhookResult:
+        # noinspection PyTypeChecker
+        active_protocol: ElnExperimentProtocol = context.active_protocol
+        sample_step = active_protocol.get_first_step_of_type('Sample')
+        if sample_step is None:
+            return SapioWebhookResult(True, display_text="There are no sample step. Create it first.")
+        ELNStepFactory.create_bar_chart_step(active_protocol, sample_step, "Concentration vs Sample ID",
+                                             "SampleId", "Concentration")
+        return SapioWebhookResult(True)
+
+
 # Note: the registration points here are directly under root.
 # In this example, we are listening to 8090. So the endpoint URL to be configured in Sapio is:
 # http://[webhook_server_hostname]:8090/hello_world
@@ -178,6 +194,7 @@ config.register('/eln/rule_test', ExperimentRuleHandler)
 config.register('/eln/sample_aliquot_count', ElnSampleAliquotRatioCountHandler)
 config.register('/eln/create_new_steps', ElnStepCreationHandler)
 config.register('/eln/sample_creation', ElnSampleCreationHandler)
+config.register('/eln/bar_chart_creation', BarChartDashboardCreationHandler)
 
 app = WebhookServerFactory.configure_flask_app(app=None, config=config)
 # UNENCRYPTED! This should not be used in production. You should give the "app" a ssl_context or set up a reverse-proxy.
