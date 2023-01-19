@@ -12,7 +12,7 @@ from sapiopylib.rest.pojo.webhook.WebhookResult import SapioWebhookResult
 from sapiopylib.rest.utils.FormBuilder import FormBuilder
 from sapiopylib.rest.utils.FoundationAccessioning import FoundationAccessionManager
 from sapiopylib.rest.utils.ProtocolUtils import ELNStepFactory
-from sapiopylib.rest.utils.Protocols import AbstractProtocol, ElnExperimentProtocol
+from sapiopylib.rest.utils.Protocols import ElnExperimentProtocol, ElnEntryStep
 from waitress import serve
 
 
@@ -170,9 +170,8 @@ class BarChartDashboardCreationHandler(AbstractWebhookHandler):
     """
 
     def run(self, context: SapioWebhookContext) -> SapioWebhookResult:
-        # noinspection PyTypeChecker
-        active_protocol: ElnExperimentProtocol = context.active_protocol
-        sample_step = active_protocol.get_first_step_of_type('Sample')
+        active_protocol: Optional[ElnExperimentProtocol] = context.active_protocol
+        sample_step: Optional[ElnEntryStep] = active_protocol.get_first_step_of_type('Sample')
         if sample_step is None:
             return SapioWebhookResult(True, display_text="There are no sample step. Create it first.")
         ELNStepFactory.create_bar_chart_step(active_protocol, sample_step, "Concentration vs Sample ID",
