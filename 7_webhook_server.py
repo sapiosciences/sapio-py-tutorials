@@ -1,5 +1,5 @@
 from datetime import date
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional, cast
 
 from sapiopylib.rest.DataMgmtService import DataMgmtServer
 from sapiopylib.rest.WebhookService import AbstractWebhookHandler, WebhookConfiguration, WebhookServerFactory
@@ -34,8 +34,8 @@ class UserFeedbackHandler(AbstractWebhookHandler):
     def run(self, context: SapioWebhookContext) -> SapioWebhookResult:
         if context.client_callback_result is not None:
             # This is Round 2, user has answered the feedback form. We are parsing the results...
-            # noinspection PyTypeChecker
-            form_result: FormEntryDialogResult = context.client_callback_result
+            form_result: Optional[FormEntryDialogResult] = cast(Optional[FormEntryDialogResult],
+                                                                context.client_callback_result)
             if not form_result.user_cancelled:
                 response_map: Dict[str, Any] = form_result.user_response_map
                 feeling: bool = response_map.get('Feeling')
@@ -102,7 +102,7 @@ class ElnSampleAliquotRatioCountHandler(AbstractWebhookHandler):
     """
 
     def run(self, context: SapioWebhookContext) -> SapioWebhookResult:
-        active_protocol: AbstractProtocol = context.active_protocol
+        active_protocol: Optional[ElnExperimentProtocol] = context.active_protocol
         sample_step = active_protocol.get_first_step_of_type('Sample')
         if sample_step is None:
             return SapioWebhookResult(True, display_text='There are no source sample table.')
@@ -124,8 +124,7 @@ class ElnStepCreationHandler(AbstractWebhookHandler):
     """
 
     def run(self, context: SapioWebhookContext) -> SapioWebhookResult:
-        # noinspection PyTypeChecker
-        active_protocol: ElnExperimentProtocol = context.active_protocol
+        active_protocol: Optional[ElnExperimentProtocol] = context.active_protocol
         # We will create a Request form.
         request_record = context.data_record_manager.add_data_record('Request')
         request_record.set_field_value('RequestId', 'Python Webhook Demo Request ' + str(date.today()))
@@ -145,8 +144,7 @@ class ElnSampleCreationHandler(AbstractWebhookHandler):
     """
 
     def run(self, context: SapioWebhookContext) -> SapioWebhookResult:
-        # noinspection PyTypeChecker
-        active_protocol: ElnExperimentProtocol = context.active_protocol
+        active_protocol: Optional[ElnExperimentProtocol] = context.active_protocol
         sample_step = active_protocol.get_first_step_of_type('Sample')
         if sample_step is None:
             sample_step = ELNStepFactory.create_table_step(active_protocol, 'Samples', 'Sample')
