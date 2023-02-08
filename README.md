@@ -36,7 +36,7 @@ The most recent release may contain REST calls that will require a bleeding edge
 sapiopylib along with its tutorials in the github are licensed under MPL 2.0.
 pypi.org is granted the right to distribute sapiopylib forever.
 
-This license is not provide any rights to use any other copyrighted artifacts from Sapio Sciences. (And they are typically written in another programming language with no linkages to this library.)
+This license does not provide any rights to use any other copyrighted artifacts from Sapio Sciences. (And they are typically written in another programming language with no linkages to this library.)
 
 ## Dependencies
 The following dependencies are required for this package:
