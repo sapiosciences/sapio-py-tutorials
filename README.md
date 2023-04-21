@@ -45,6 +45,8 @@ The following dependencies are required for this package:
   built on top of the Python programming language.](https://pandas.pydata.org/)
 - [Flask - A simple framework for building complex web applications.](https://pypi.org/project/Flask/)
 - [buslane - A simple implementation of event-bus system with proper type hinting](https://pypi.org/project/buslane/)
+- [plotly.py - An open-source, interactive data visualization library for Python](https://pypi.org/project/plotly/)
+- [kaleido - Static image export for web-based visualization libraries with zero dependencies](https://pypi.org/project/kaleido/)
 
 ## Documentation
 All documentations, including code examples and installation guide, are provided at [our sapiopylib tutorial github](https://github.com/sapiosciences/sapio-py-tutorials).
