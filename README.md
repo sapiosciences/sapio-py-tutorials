@@ -2,7 +2,7 @@
 # sapiopylib: Official Sapio Informatics Platform Python API
 
 <div align="center">
-  <img src="https://www.sapiosciences.com/css/images/sapio-sciences-official-python-api-library.png" alt="logo"><br>
+  <img src="https://s3.amazonaws.com/public.exemplareln.com/sapio-pylib/sapio-sciencesofficial-python-api-library.png" alt="logo"><br>
 </div>
 
 -----------------
