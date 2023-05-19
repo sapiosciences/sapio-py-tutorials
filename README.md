@@ -9,7 +9,7 @@
 [![PyPI Latest Release](https://img.shields.io/pypi/v/sapiopylib.svg)](https://pypi.org/project/sapiopylib/) [![License](https://img.shields.io/pypi/l/sapiopylib.svg)](https://github.com/sapiosciences/sapio-py-tutorials/blob/master/LICENSE) [![Issues](https://img.shields.io/github/issues/sapiosciences/sapio-py-tutorials)](https://github.com/sapiosciences/sapio-py-tutorials/issues)
 
 ## What is it?
-sapiopylib is a powerful Python package, developed and maintained by Sapio Sciences, that provides the ability to create endpoints to manipulate data and make configuration changes within the Sapio LIMS system in a quick and straightforward manner.
+sapiopylib is a powerful Python package, developed and maintained by Sapio Sciences, that provides the ability to create endpoints to manipulate data and make configuration changes within the Sapio lab informatics platform in a quick and straightforward manner.
 
 The package makes it easy to automate changes to and queries of different types of data in the system, ranging from records to notebooks and the entries within them. Intuitive datatypes, such as record models that allow for simple manipulation of data records and their fields, within the package help to make development nearly as straightforward as performing the same tasks in the application.
 
