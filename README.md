@@ -1,9 +1,9 @@
 
 # sapiopylib: Official Sapio Informatics Platform Python API
 
-<div align="center">
-  <img src="https://s3.amazonaws.com/public.exemplareln.com/sapio-pylib/sapio-sciencesofficial-python-api-library.png" alt="logo"><br>
-</div>
+<div align="center"><a href="https://www.sapiosciences.com" target="_blank">
+  <img src="https://s3.amazonaws.com/public.exemplareln.com/sapio-pylib/sapio-sciencesofficial-python-api-library.png" alt="Sapio Sciences"><br>
+</a></div>
 
 -----------------
 [![PyPI Latest Release](https://img.shields.io/pypi/v/sapiopylib.svg)](https://pypi.org/project/sapiopylib/) [![License](https://img.shields.io/pypi/l/sapiopylib.svg)](https://github.com/sapiosciences/sapio-py-tutorials/blob/master/LICENSE) [![Issues](https://img.shields.io/github/issues/sapiosciences/sapio-py-tutorials)](https://github.com/sapiosciences/sapio-py-tutorials/issues)
