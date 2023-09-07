@@ -61,4 +61,4 @@ If you would like to report an issue on sapiopylib, or its tutorial content, ple
 ## About Us
 Sapio is at the forefront of the Digital Lab with its science-aware platform for managing all your life science data with its integrated Electronic Lab Notebook, LIMS Software and Scientific Data Management System.
 
-Visit us at https://www.sapiosciences.com/
+Visit us at <a href="https://www.sapiosciences.com">Sapio Sciences</a>
