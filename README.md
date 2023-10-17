@@ -29,8 +29,12 @@ Installation is simple:
 pip install sapiopylib
 ```
 However, you may need to pay attention to the library version to ensure it is compatible with your Sapio Informatics Platform.
+
 The correct versions for each platform can be found under the tutorial github. The github will create a branch under 'prior_releases' folder when a specific sapiopylib is made against a platform release. The installation manual inside the tutorial, with the correct branch checked out, will make a reference to the exact version you should install for that platform.
-The most recent release may contain REST calls that will require a bleeding edge version of Sapio Platform that has not yet reached GA status.
+
+Pre-releases will reference the bleeding-edge non-GA Sapio Platform.
+
+The latest release of sapiopylib marked with final status will reference the latest GA Sapio Platform.
 
 ## Licenses
 sapiopylib along with its tutorials in the github are licensed under MPL 2.0.
