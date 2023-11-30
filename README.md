@@ -56,7 +56,7 @@ The following dependencies are required for this package:
 All documentations, including code examples and installation guide, are provided at [our sapiopylib tutorial github](https://github.com/sapiosciences/sapio-py-tutorials).
 
 ## Getting Help
-If you have support contract with Sapio Sciences, please use our technical support channels. support@sapiosciences.com
+If you have support contract with Sapio Sciences, please use our [technical support channels](https://sapio-sciences.atlassian.net/servicedesk/customer/portals).
 
 If you have any questions about how to use sapiopylib, please visit our tutorial page.
 
