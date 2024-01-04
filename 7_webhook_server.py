@@ -336,6 +336,23 @@ def format_table_name(data_type_plural_display_name: str) -> str:
     return f"{data_type_plural_display_name} Records"
 
 
+def _get_records_in_table(context: SapioWebhookContext, experiment_id: int,
+                          data_type_plural_display_name: str) -> list[DataRecord]:
+    """
+    If the table exists then return a list of the records it contains, otherwise return an empty list
+    """
+    table_name = format_table_name(data_type_plural_display_name)
+    table = get_entry_by_name(context, experiment_id, table_name)
+
+    eln_manager = context.eln_manager
+
+    records_in_table = []
+    if table is not None:
+        records_in_table = list(eln_manager.get_data_records_for_entry(experiment_id, table.entry_id))
+
+    return records_in_table
+
+
 class AddRecords(AbstractWebhookHandler):
     """
     This webhook adds records to a table in the experiment its invoked on.
@@ -353,26 +370,26 @@ class AddRecords(AbstractWebhookHandler):
             context.client_callback_result,
         )
 
-        # Part 1: Display a form and ask the user to choose a data type
+        # Step 1: Display a form and ask the user to choose a data type
         if form_result is None:
-            return self.prompt_for_data_type(context)
+            return self.__prompt_for_data_type(context)
 
-        # Part 2: Ask whether to add new or existing records
+        # Step 2: Ask whether to add new or existing records
         elif (
                 isinstance(form_result, FormEntryDialogResult)
                 and form_result.user_response_map is not None
                 and self.DATA_TYPE in form_result.user_response_map
         ):
-            return self.prompt_for_new_or_existing(context, form_result)
+            return self.__prompt_for_new_or_existing(context, form_result)
 
-        # Part 3.new: New was selected so prompt for the number of records
+        # Step 3.new: New was selected so prompt for the number of records
         elif (
                 isinstance(form_result, OptionDialogResult)
                 and form_result.button_text == self.NEW
         ):
-            return self.prompt_for_number_of_records(context)
+            return self.__prompt_for_number_of_records(context)
 
-        # Part 4.new: Add new records
+        # Step 4.new: Add new records
         elif (
                 isinstance(form_result, FormEntryDialogResult)
                 and form_result.user_response_map is not None
@@ -386,20 +403,19 @@ class AddRecords(AbstractWebhookHandler):
                 selected_internal_data_type_name, num_records
             )
 
-            self.add_records_to_table(context, records)
+            self.__add_records_to_table(context, records)
 
             return SapioWebhookResult(True)
 
-        # Part 3.existing: Existing was selected so show a prompt with existing data records to be added
+        # Step 3.existing: Existing was selected so show a prompt with existing data records to be added
         elif (
                 isinstance(form_result, OptionDialogResult)
                 and form_result.button_text == self.EXISTING
         ):
-            return self.prompt_for_existing_records(context)
+            return self.__prompt_for_existing_records(context)
 
-        # Part 4.existing: Add selected records to table
-        elif isinstance(form_result, DataRecordSelectionResult) and not form_result.user_cancelled:
-            assert form_result.selected_field_map_list is not None
+        # Step 4.existing: Add selected records to table
+        elif isinstance(form_result, DataRecordSelectionResult) and form_result.selected_field_map_list is not None:
 
             # Get the RecordIds of the selected records
             record_ids = [
@@ -411,7 +427,7 @@ class AddRecords(AbstractWebhookHandler):
             data_record_manager = context.data_record_manager
             records = list(data_record_manager.query_data_records_by_id(selected_data_type_internal_name, record_ids))
 
-            self.add_records_to_table(context, records)
+            self.__add_records_to_table(context, records)
 
             return SapioWebhookResult(True)
 
@@ -421,14 +437,15 @@ class AddRecords(AbstractWebhookHandler):
             print("User cancelled adding records.")
             return SapioWebhookResult(True)
 
-        print(f"Unhandled case: type of form_result is {type(form_result)} which is not expected")
+        print(f"Unhandled case in {self.__class__.__name__}: type of form_result is {type(form_result)}"
+              "which is not expected")
 
         return SapioWebhookResult(
             False,
-            display_text="An unknown error occurred.",
+            display_text=f"An error occurred. Please report a bug in {self.__class__.__name__} to Support",
         )
 
-    def prompt_for_data_type(self, context: SapioWebhookContext) -> SapioWebhookResult:
+    def __prompt_for_data_type(self, context: SapioWebhookContext) -> SapioWebhookResult:
 
         data_type_manager = DataMgmtServer.get_data_type_manager(context.user)
         data_type_internal_names = data_type_manager.get_data_type_name_list()
@@ -463,8 +480,8 @@ class AddRecords(AbstractWebhookHandler):
 
         return SapioWebhookResult(True, client_callback_request=request)
 
-    def prompt_for_new_or_existing(self, context: SapioWebhookContext,
-                                   form_result: FormEntryDialogResult) -> SapioWebhookResult:
+    def __prompt_for_new_or_existing(self, context: SapioWebhookContext,
+                                     form_result: FormEntryDialogResult) -> SapioWebhookResult:
 
         data_type_manager = DataMgmtServer.get_data_type_manager(context.user)
         internal_data_type_names = data_type_manager.get_data_type_name_list()
@@ -473,11 +490,9 @@ class AddRecords(AbstractWebhookHandler):
 
         selected_internal_data_type_name = internal_data_type_names[data_type_idx]
 
-        options = [self.NEW, self.EXISTING, self.CANCEL]
-
-        # The dialog displays the options in reverse order
-        # reverse the list so that the options display as intended
-        options.reverse()
+        # These options may be displayed in the reverse order.
+        # This can be controlled by a user theme setting.
+        options = [self.CANCEL, self.NEW, self.EXISTING]
 
         option_request = OptionDialogRequest(
             "Add New or Existing Records",
@@ -492,7 +507,7 @@ class AddRecords(AbstractWebhookHandler):
 
         return SapioWebhookResult(True, client_callback_request=option_request)
 
-    def prompt_for_number_of_records(self, context: SapioWebhookContext) -> SapioWebhookResult:
+    def __prompt_for_number_of_records(self, context: SapioWebhookContext) -> SapioWebhookResult:
         form_builder = FormBuilder()
         num_field = VeloxIntegerFieldDefinition(
             form_builder.get_data_type_name(),
@@ -514,7 +529,7 @@ class AddRecords(AbstractWebhookHandler):
 
         return SapioWebhookResult(True, client_callback_request=request)
 
-    def prompt_for_existing_records(self, context: SapioWebhookContext) -> SapioWebhookResult:
+    def __prompt_for_existing_records(self, context: SapioWebhookContext) -> SapioWebhookResult:
         experiment_id = context.active_protocol.get_id()
 
         data_type_cache_manager = RecordModelManager(context.user).data_type_cache_manager
@@ -528,7 +543,7 @@ class AddRecords(AbstractWebhookHandler):
         # Get all records of type selected_internal_data_type_name
         records = list(data_record_manager.query_all_records_of_type(selected_internal_data_type_name))
 
-        records_in_table = self.get_records_in_table(context, experiment_id, data_type_plural_display_name)
+        records_in_table = _get_records_in_table(context, experiment_id, data_type_plural_display_name)
 
         # Display records that are not already in the table
         records_not_in_table = [record for record in records if record not in records_in_table]
@@ -547,23 +562,7 @@ class AddRecords(AbstractWebhookHandler):
         request.callback_context_data = selected_internal_data_type_name
         return SapioWebhookResult(True, client_callback_request=request)
 
-    def get_records_in_table(self, context: SapioWebhookContext, experiment_id: int,
-                             data_type_plural_display_name: str) -> list[DataRecord]:
-        """
-        If the table already exists then return a list of the records it contains, otherwise return an empty list
-        """
-        table_name = format_table_name(data_type_plural_display_name)
-        table = get_entry_by_name(context, experiment_id, table_name)
-
-        eln_manager = context.eln_manager
-
-        records_in_table = []
-        if table is not None:
-            records_in_table = list(eln_manager.get_data_records_for_entry(experiment_id, table.entry_id))
-
-        return records_in_table
-
-    def add_records_to_table(self, context: SapioWebhookContext, records: list[DataRecord]) -> None:
+    def __add_records_to_table(self, context: SapioWebhookContext, records: list[DataRecord]) -> None:
         """
         If the table doesn't already exist it is created and added to the Experiment
         """
@@ -585,10 +584,12 @@ class AddRecords(AbstractWebhookHandler):
 
         if table is None:
             # Create new table entry since it doesn't exist
-            table_order = len(protocol.get_sorted_step_list()) + 1
+
+            # Place the table at the end of the experiment
+            table_position = len(protocol.get_sorted_step_list()) + 1
 
             new_table_entry_criteria = ElnEntryCriteria(
-                ElnEntryType.Table, table_name, selected_internal_data_type_name, table_order
+                ElnEntryType.Table, table_name, selected_internal_data_type_name, table_position
             )
 
             table = eln_manager.add_experiment_entry(experiment_id, new_table_entry_criteria)
