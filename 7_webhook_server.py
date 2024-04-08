@@ -1,7 +1,9 @@
 from datetime import date
 from typing import Any, Dict, List, Optional, cast
 
+from sapiopylib.rest.ClientCallbackService import ClientCallback
 from sapiopylib.rest.DataMgmtService import DataMgmtServer
+from sapiopylib.rest.User import SapioUser
 from sapiopylib.rest.WebhookService import AbstractWebhookHandler, WebhookConfiguration, WebhookServerFactory
 from sapiopylib.rest.pojo.DataRecord import DataRecord
 from sapiopylib.rest.pojo.datatype.FieldDefinition import VeloxBooleanFieldDefinition, VeloxEnumFieldDefinition, \
@@ -10,10 +12,7 @@ from sapiopylib.rest.pojo.datatype.FieldDefinition import VeloxBooleanFieldDefin
 from sapiopylib.rest.pojo.eln.ExperimentEntry import ExperimentEntry
 from sapiopylib.rest.pojo.eln.ExperimentEntryCriteria import ElnEntryCriteria, ExperimentEntryCriteriaUtil
 from sapiopylib.rest.pojo.eln.SapioELNEnums import ElnEntryType, ExperimentEntryStatus
-from sapiopylib.rest.pojo.webhook.ClientCallbackRequest import FormEntryDialogRequest, OptionDialogRequest, \
-    DataRecordSelectionRequest
-from sapiopylib.rest.pojo.webhook.ClientCallbackResult import DataRecordSelectionResult, FormEntryDialogResult, \
-    OptionDialogResult
+from sapiopylib.rest.pojo.webhook.ClientCallbackRequest import FormEntryDialogRequest, DisplayPopupRequest, PopupType
 from sapiopylib.rest.pojo.webhook.WebhookContext import SapioWebhookContext
 from sapiopylib.rest.pojo.webhook.WebhookResult import SapioWebhookResult
 from sapiopylib.rest.utils.FormBuilder import FormBuilder
@@ -40,58 +39,47 @@ class UserFeedbackHandler(AbstractWebhookHandler):
     """
 
     def run(self, context: SapioWebhookContext) -> SapioWebhookResult:
-        if context.client_callback_result is not None:
-            # This is Round 2, user has answered the feedback form. We are parsing the results...
-            form_result: Optional[FormEntryDialogResult] = cast(Optional[FormEntryDialogResult],
-                                                                context.client_callback_result)
+        user: SapioUser = context.user
+        client_callback: ClientCallback = DataMgmtServer.get_client_callback(user)
 
-            # Check that the user has not cancelled
-            if not form_result.user_cancelled:
-                # Get a dictionary which maps form field names to the user input
-                response_map: Dict[str, Any] = form_result.user_response_map
-                feeling: bool = response_map.get('Feeling')
-                comments: str = response_map.get('Comments')
+        # Use the FormBuilder utility to quickly create a temporary data type with default layouts.
+        form_builder: FormBuilder = FormBuilder()
 
-                msg: str
-                if feeling:
-                    msg = "User felt very good! Nothing to do here..."
-                else:
-                    msg = "=_= User didn't feel very good. The comment left was: " + str(comments)
+        # Define a Boolean field
+        # The 2nd argument data_field_name is the key for this field in the user_response_map
+        # The 3rd argument display_name is the message shown to the user besides the field itself
+        feeling_field = VeloxBooleanFieldDefinition(form_builder.get_data_type_name(), 'Feeling',
+                                                    "Are you feeling well?", default_value=False)
+        # Make the field required to submit the form and make it changeable by the user
+        feeling_field.required = True
+        feeling_field.editable = True
 
-                print(msg)
-                # Display text sent over will be a toastr on the web client in Sapio.
-                return SapioWebhookResult(True, client_callback_request=None, display_text=msg)
-            else:
-                print("Cancelled.")
-                return SapioWebhookResult(True, display_text="You have Cancelled!")
+        # Add the field to the form
+        form_builder.add_field(feeling_field)
+        comments_field = VeloxStringFieldDefinition(form_builder.get_data_type_name(), 'Comments',
+                                                    "Additional Comments", max_length=2000)
+        comments_field.editable = True
+        form_builder.add_field(comments_field)
+        temp_dt = form_builder.get_temporary_data_type()
 
+        # 1st argument is the form's title, 2nd is the message
+        request = FormEntryDialogRequest("Feedback", "Please provide us with some feedback!", temp_dt)
+        form_dialog_result = client_callback.show_form_entry_dialog(request)
+
+        if not form_dialog_result:
+            # If user clicked cancel in the form entry dialog, a None object is returned.
+            client_callback.display_popup(DisplayPopupRequest("Feedback Form", "You have Cancelled!", PopupType.Info))
         else:
-            # This is Round 1, user hasn't done anything we are just telling Sapio Platform to display a form...
-            form_builder: FormBuilder = FormBuilder()
-
-            # Define a Boolean field
-            # The 2nd argument data_field_name is the key for this field in the user_response_map
-            # The 3rd argument display_name is the message shown to the user besides the field itself
-            feeling_field = VeloxBooleanFieldDefinition(form_builder.get_data_type_name(), 'Feeling',
-                                                        "Are you feeling well?", default_value=False)
-            # Make the field required to submit the form and make it changeable by the user
-            feeling_field.required = True
-            feeling_field.editable = True
-
-            # Add the field to the form
-            form_builder.add_field(feeling_field)
-
-            comments_field = VeloxStringFieldDefinition(form_builder.get_data_type_name(), 'Comments',
-                                                        "Additional Comments", max_length=2000)
-            comments_field.editable = True
-
-            form_builder.add_field(comments_field)
-
-            temp_dt = form_builder.get_temporary_data_type()
-
-            # 1st argument is the form's title, 2nd is the message
-            request = FormEntryDialogRequest("Feedback", "Please provide us with some feedback!", temp_dt)
-            return SapioWebhookResult(True, client_callback_request=request)
+            # Otherwise, the dictionary by field names we entered above would have been returned as result.
+            feeling: bool = form_dialog_result.get('Feeling')
+            comments: str = form_dialog_result.get('Comments')
+            msg: str
+            if feeling:
+                msg = "User felt very good! Nothing to do here..."
+            else:
+                msg = "=_= User didn't feel very good. The comment left was: " + str(comments)
+            client_callback.display_popup(DisplayPopupRequest("Feedback Form", msg, PopupType.Success))
+        return SapioWebhookResult(True)
 
 
 class NewGooOnSaveRuleHandler(AbstractWebhookHandler):
@@ -353,250 +341,6 @@ def _get_records_in_table(context: SapioWebhookContext, experiment_id: int,
     return records_in_table
 
 
-class AddRecords(AbstractWebhookHandler):
-    """
-    This webhook adds records to a table in the experiment its invoked on.
-    """
-    DATA_TYPE = "Data Type"
-    NUMBER = "Number"
-
-    NEW = "Add New Records"
-    EXISTING = "Add Existing Records"
-    CANCEL = "Cancel"
-
-    def run(self, context: SapioWebhookContext) -> SapioWebhookResult:
-        form_result = cast(
-            FormEntryDialogResult | OptionDialogResult | DataRecordSelectionResult | None,
-            context.client_callback_result,
-        )
-
-        # Step 1: Display a form and ask the user to choose a data type
-        if form_result is None:
-            return self.__prompt_for_data_type(context)
-
-        # Step 2: Ask whether to add new or existing records
-        elif (
-                isinstance(form_result, FormEntryDialogResult)
-                and form_result.user_response_map is not None
-                and self.DATA_TYPE in form_result.user_response_map
-        ):
-            return self.__prompt_for_new_or_existing(context, form_result)
-
-        # Step 3.new: New was selected so prompt for the number of records
-        elif (
-                isinstance(form_result, OptionDialogResult)
-                and form_result.button_text == self.NEW
-        ):
-            return self.__prompt_for_number_of_records(context)
-
-        # Step 4.new: Add new records
-        elif (
-                isinstance(form_result, FormEntryDialogResult)
-                and form_result.user_response_map is not None
-                and self.NUMBER in form_result.user_response_map
-        ):
-            selected_internal_data_type_name = context.client_callback_result.callback_context_data
-
-            num_records: int = form_result.user_response_map[self.NUMBER]
-
-            records: list[DataRecord] = context.data_record_manager.add_data_records(
-                selected_internal_data_type_name, num_records
-            )
-
-            self.__add_records_to_table(context, records)
-
-            return SapioWebhookResult(True)
-
-        # Step 3.existing: Existing was selected so show a prompt with existing data records to be added
-        elif (
-                isinstance(form_result, OptionDialogResult)
-                and form_result.button_text == self.EXISTING
-        ):
-            return self.__prompt_for_existing_records(context)
-
-        # Step 4.existing: Add selected records to table
-        elif isinstance(form_result, DataRecordSelectionResult) and form_result.selected_field_map_list is not None:
-
-            # Get the RecordIds of the selected records
-            record_ids = [
-                selected_record_map["RecordId"] for selected_record_map in form_result.selected_field_map_list
-            ]
-
-            selected_data_type_internal_name = context.client_callback_result.callback_context_data
-
-            data_record_manager = context.data_record_manager
-            records = list(data_record_manager.query_data_records_by_id(selected_data_type_internal_name, record_ids))
-
-            self.__add_records_to_table(context, records)
-
-            return SapioWebhookResult(True)
-
-        elif form_result.user_cancelled or (
-                isinstance(form_result, OptionDialogResult) and form_result.button_text == self.CANCEL
-        ):
-            print("User cancelled adding records.")
-            return SapioWebhookResult(True)
-
-        print(f"Unhandled case in {self.__class__.__name__}: type of form_result is {type(form_result)}"
-              "which is not expected")
-
-        return SapioWebhookResult(
-            False,
-            display_text=f"An error occurred. Please report a bug in {self.__class__.__name__} to Support",
-        )
-
-    def __prompt_for_data_type(self, context: SapioWebhookContext) -> SapioWebhookResult:
-
-        data_type_manager = DataMgmtServer.get_data_type_manager(context.user)
-        data_type_internal_names = data_type_manager.get_data_type_name_list()
-
-        data_type_cache_manager = RecordModelManager(context.user).data_type_cache_manager
-
-        # This line performs an api call for each name which makes it slow
-        data_type_display_names = [
-            data_type_cache_manager.get_display_name(internal_name) for internal_name in data_type_internal_names
-        ]
-
-        internal_and_display_names = zip(data_type_internal_names, data_type_display_names)
-
-        data_type_names_formatted = [
-            f"{display_name} ({internal_name})" for internal_name, display_name in internal_and_display_names
-        ]
-
-        form_builder = FormBuilder()
-        data_type_field = VeloxEnumFieldDefinition(
-            form_builder.get_data_type_name(),
-            self.DATA_TYPE,
-            self.DATA_TYPE,
-            default_value=None,
-            values=data_type_names_formatted,
-        )
-        data_type_field.required = True
-        data_type_field.editable = True
-
-        form_builder.add_field(data_type_field)
-        temp_dt = form_builder.get_temporary_data_type()
-        request = FormEntryDialogRequest("Choose a Data Type", "", temp_dt)
-
-        return SapioWebhookResult(True, client_callback_request=request)
-
-    def __prompt_for_new_or_existing(self, context: SapioWebhookContext,
-                                     form_result: FormEntryDialogResult) -> SapioWebhookResult:
-
-        data_type_manager = DataMgmtServer.get_data_type_manager(context.user)
-        internal_data_type_names = data_type_manager.get_data_type_name_list()
-
-        data_type_idx: int = form_result.user_response_map[self.DATA_TYPE]
-
-        selected_internal_data_type_name = internal_data_type_names[data_type_idx]
-
-        # These options may be displayed in the reverse order.
-        # This can be controlled by a user theme setting.
-        options = [self.CANCEL, self.NEW, self.EXISTING]
-
-        option_request = OptionDialogRequest(
-            "Add New or Existing Records",
-            "Add New or Existing Records",
-            options,
-            closable=True,
-        )
-
-        # We save data between calls to this webhook by attaching it to the request via the
-        # callback_context_data attribute
-        option_request.callback_context_data = selected_internal_data_type_name
-
-        return SapioWebhookResult(True, client_callback_request=option_request)
-
-    def __prompt_for_number_of_records(self, context: SapioWebhookContext) -> SapioWebhookResult:
-        form_builder = FormBuilder()
-        num_field = VeloxIntegerFieldDefinition(
-            form_builder.get_data_type_name(),
-            self.NUMBER,
-            "Number of Records to add",
-            default_value=1,
-            min_value=1,
-        )
-        num_field.required = True
-        num_field.editable = True
-
-        form_builder.add_field(num_field)
-        temp_dt = form_builder.get_temporary_data_type()
-        request = FormEntryDialogRequest("", "", temp_dt)
-
-        # Context data only persists from one call to the next,
-        # so we need to manually pass it along.
-        request.callback_context_data = context.client_callback_result.callback_context_data
-
-        return SapioWebhookResult(True, client_callback_request=request)
-
-    def __prompt_for_existing_records(self, context: SapioWebhookContext) -> SapioWebhookResult:
-        experiment_id = context.active_protocol.get_id()
-
-        data_type_cache_manager = RecordModelManager(context.user).data_type_cache_manager
-        selected_internal_data_type_name = context.client_callback_result.callback_context_data
-        data_type_plural_display_name = data_type_cache_manager.get_plural_display_name(
-            selected_internal_data_type_name
-        )
-
-        data_record_manager = context.data_record_manager
-
-        # Get all records of type selected_internal_data_type_name
-        records = list(data_record_manager.query_all_records_of_type(selected_internal_data_type_name))
-
-        records_in_table = _get_records_in_table(context, experiment_id, data_type_plural_display_name)
-
-        # Display records that are not already in the table
-        records_not_in_table = [record for record in records if record not in records_in_table]
-
-        data_type_display_name = data_type_cache_manager.get_display_name(selected_internal_data_type_name)
-        data_type_manager = DataMgmtServer.get_data_type_manager(context.user)
-        fields = data_type_manager.get_field_definition_list(selected_internal_data_type_name)
-
-        request = DataRecordSelectionRequest(
-            data_type_display_name,
-            data_type_plural_display_name,
-            fields,
-            [record.get_fields() for record in records_not_in_table],
-            multi_select=True,
-        )
-        request.callback_context_data = selected_internal_data_type_name
-        return SapioWebhookResult(True, client_callback_request=request)
-
-    def __add_records_to_table(self, context: SapioWebhookContext, records: list[DataRecord]) -> None:
-        """
-        If the table doesn't already exist it is created and added to the Experiment
-        """
-        data_type_cache_manager = RecordModelManager(context.user).data_type_cache_manager
-
-        selected_internal_data_type_name = context.client_callback_result.callback_context_data
-
-        data_type_plural_display_name = data_type_cache_manager.get_plural_display_name(
-            selected_internal_data_type_name)
-
-        protocol = context.active_protocol
-
-        experiment_id = protocol.get_id()
-
-        table_name = format_table_name(data_type_plural_display_name)
-        table = get_entry_by_name(context, experiment_id, table_name)
-
-        eln_manager = context.eln_manager
-
-        if table is None:
-            # Create new table entry since it doesn't exist
-
-            # Place the table at the end of the experiment
-            table_position = len(protocol.get_sorted_step_list()) + 1
-
-            new_table_entry_criteria = ElnEntryCriteria(
-                ElnEntryType.Table, table_name, selected_internal_data_type_name, table_position
-            )
-
-            table = eln_manager.add_experiment_entry(experiment_id, new_table_entry_criteria)
-
-        eln_manager.add_records_to_table_entry(experiment_id, table.entry_id, records)
-
-
 def get_entry_by_option(context: SapioWebhookContext, option: str) -> ExperimentEntry | None:
     """
     Get the first entry in the context with the given entry option key, or None if no entry has that entry option.
@@ -659,7 +403,6 @@ config.register('/eln/sample_creation', ElnSampleCreationHandler)
 config.register('/eln/bar_chart_creation', BarChartDashboardCreationHandler)
 config.register('/eln/add_instrument_tracking', AddInstrumentTracking)
 config.register('/eln/autocomplete_first_entry', AutoCompleteFirstEntry)
-config.register('/eln/add_records', AddRecords)
 config.register('/eln/check_number_samples', CheckNumberOfSamples)
 
 app = WebhookServerFactory.configure_flask_app(app=None, config=config)
@@ -670,3 +413,6 @@ app = WebhookServerFactory.configure_flask_app(app=None, config=config)
 
 # Production Mode
 serve(app, host="0.0.0.0", port=8090)
+
+#For performance reasons, we recommend using gunicorn. If you have gunicorn installed:
+#Run "gunicorn server:app"
