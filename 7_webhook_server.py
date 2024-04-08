@@ -6,9 +6,7 @@ from sapiopylib.rest.DataMgmtService import DataMgmtServer
 from sapiopylib.rest.User import SapioUser
 from sapiopylib.rest.WebhookService import AbstractWebhookHandler, WebhookConfiguration, WebhookServerFactory
 from sapiopylib.rest.pojo.DataRecord import DataRecord
-from sapiopylib.rest.pojo.datatype.FieldDefinition import VeloxBooleanFieldDefinition, VeloxEnumFieldDefinition, \
-    VeloxIntegerFieldDefinition, \
-    VeloxStringFieldDefinition
+from sapiopylib.rest.pojo.datatype.FieldDefinition import VeloxBooleanFieldDefinition, VeloxStringFieldDefinition
 from sapiopylib.rest.pojo.eln.ExperimentEntry import ExperimentEntry
 from sapiopylib.rest.pojo.eln.ExperimentEntryCriteria import ElnEntryCriteria, ExperimentEntryCriteriaUtil
 from sapiopylib.rest.pojo.eln.SapioELNEnums import ElnEntryType, ExperimentEntryStatus
@@ -19,7 +17,6 @@ from sapiopylib.rest.utils.FormBuilder import FormBuilder
 from sapiopylib.rest.utils.FoundationAccessioning import FoundationAccessionManager
 from sapiopylib.rest.utils.ProtocolUtils import ELNStepFactory
 from sapiopylib.rest.utils.Protocols import ElnEntryStep, ElnExperimentProtocol
-from sapiopylib.rest.utils.recordmodel.RecordModelManager import RecordModelManager
 from waitress import serve
 
 
