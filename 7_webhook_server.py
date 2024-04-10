@@ -6,14 +6,22 @@ from sapiopylib.rest.DataMgmtService import DataMgmtServer
 from sapiopylib.rest.User import SapioUser
 from sapiopylib.rest.WebhookService import AbstractWebhookHandler, WebhookConfiguration, WebhookServerFactory
 from sapiopylib.rest.pojo.DataRecord import DataRecord
-from sapiopylib.rest.pojo.datatype.FieldDefinition import VeloxBooleanFieldDefinition, VeloxEnumFieldDefinition, \
-    VeloxIntegerFieldDefinition, \
-    VeloxStringFieldDefinition
+from sapiopylib.rest.pojo.datatype.FieldDefinition import (
+    VeloxBooleanFieldDefinition,
+    VeloxEnumFieldDefinition,
+    VeloxIntegerFieldDefinition,
+    VeloxStringFieldDefinition,
+)
 from sapiopylib.rest.pojo.eln.ExperimentEntry import ExperimentEntry
 from sapiopylib.rest.pojo.eln.ExperimentEntryCriteria import ElnEntryCriteria, ExperimentEntryCriteriaUtil
 from sapiopylib.rest.pojo.eln.SapioELNEnums import ElnEntryType, ExperimentEntryStatus
-from sapiopylib.rest.pojo.webhook.ClientCallbackRequest import DataRecordSelectionRequest, DisplayPopupRequest, \
-    FormEntryDialogRequest, OptionDialogRequest, PopupType
+from sapiopylib.rest.pojo.webhook.ClientCallbackRequest import (
+    DataRecordSelectionRequest,
+    DisplayPopupRequest,
+    FormEntryDialogRequest,
+    OptionDialogRequest,
+    PopupType,
+)
 from sapiopylib.rest.pojo.webhook.WebhookContext import SapioWebhookContext
 from sapiopylib.rest.pojo.webhook.WebhookResult import SapioWebhookResult
 from sapiopylib.rest.utils.FormBuilder import FormBuilder
@@ -50,8 +58,9 @@ class UserFeedbackHandler(AbstractWebhookHandler):
         # The 2nd argument data_field_name is the key for this field in the dictionary returned by
         # client_callback.show_form_entry_dialog
         # The 3rd argument display_name is the message shown to the user besides the field itself
-        feeling_field = VeloxBooleanFieldDefinition(form_builder.get_data_type_name(), 'Feeling',
-                                                    "Are you feeling well?", default_value=False)
+        feeling_field = VeloxBooleanFieldDefinition(
+            form_builder.get_data_type_name(), "Feeling", "Are you feeling well?", default_value=False
+        )
 
         # Make the field required to submit the form and make it changeable by the user
         feeling_field.required = True
@@ -60,8 +69,9 @@ class UserFeedbackHandler(AbstractWebhookHandler):
         # Add the field to the form
         form_builder.add_field(feeling_field)
 
-        comments_field = VeloxStringFieldDefinition(form_builder.get_data_type_name(), 'Comments',
-                                                    "Additional Comments", max_length=2000)
+        comments_field = VeloxStringFieldDefinition(
+            form_builder.get_data_type_name(), "Comments", "Additional Comments", max_length=2000
+        )
 
         comments_field.editable = True
 
@@ -78,8 +88,8 @@ class UserFeedbackHandler(AbstractWebhookHandler):
             client_callback.display_popup(DisplayPopupRequest("Feedback Form", "You have Cancelled!", PopupType.Info))
         else:
             # Otherwise, the dictionary by field names we entered above would have been returned as result.
-            feeling: bool = form_dialog_result.get('Feeling')
-            comments: str = form_dialog_result.get('Comments')
+            feeling: bool = form_dialog_result.get("Feeling")
+            comments: str = form_dialog_result.get("Comments")
             msg: str
             if feeling:
                 msg = "User felt very good! Nothing to do here..."
@@ -105,7 +115,7 @@ class ExperimentRuleHandler(AbstractWebhookHandler):
     """
 
     def run(self, context: SapioWebhookContext) -> SapioWebhookResult:
-        print("Experiment Entries of Rule: " + ','.join([entry.entry_name for entry in context.experiment_entry_list]))
+        print("Experiment Entries of Rule: " + ",".join([entry.entry_name for entry in context.experiment_entry_list]))
         print("Notebook Experiment of Rule: " + context.eln_experiment.notebook_experiment_name)
 
         # Get the first entry in the experiment
@@ -117,8 +127,10 @@ class ExperimentRuleHandler(AbstractWebhookHandler):
         records = eln_manager.get_data_records_for_entry(context.eln_experiment.notebook_experiment_id, entry.entry_id)
 
         # Print the value of NewField for each record in the entry
-        print("Record Values were: " + ','.join([str(record.get_field_value('NewField'))
-                                                 for record in records.result_list]))
+        print(
+            "Record Values were: "
+            + ",".join([str(record.get_field_value("NewField")) for record in records.result_list])
+        )
 
         return SapioWebhookResult(True)
 
@@ -134,23 +146,26 @@ class ElnSampleAliquotRatioCountHandler(AbstractWebhookHandler):
         active_protocol: Optional[ElnExperimentProtocol] = context.active_protocol
 
         # Get the first entry which has records of type Sample
-        sample_step = active_protocol.get_first_step_of_type('Sample')
+        sample_step = active_protocol.get_first_step_of_type("Sample")
         if sample_step is None:
-            return SapioWebhookResult(True, display_text='There are no source sample table.')
+            return SapioWebhookResult(True, display_text="There are no source sample table.")
 
         source_sample_records: List[DataRecord] = sample_step.get_records()
         source_sample_record_count = len(source_sample_records)
 
         # Find the next sample table after the current source sample table,
         # excludes the sample table and everything before.
-        aliquot_step = active_protocol.get_next_step(sample_step, 'Sample')
+        aliquot_step = active_protocol.get_next_step(sample_step, "Sample")
         if aliquot_step is None:
-            return SapioWebhookResult(True, display_text='There are no aliquot sample table.')
+            return SapioWebhookResult(True, display_text="There are no aliquot sample table.")
 
         aliquot_sample_record_count = len(aliquot_step.get_records())
 
-        return SapioWebhookResult(True, display_text='The aliquot to sample ratio is: ' +
-                                                     str(aliquot_sample_record_count / source_sample_record_count))
+        return SapioWebhookResult(
+            True,
+            display_text="The aliquot to sample ratio is: "
+            + str(aliquot_sample_record_count / source_sample_record_count),
+        )
 
 
 class ElnStepCreationHandler(AbstractWebhookHandler):
@@ -162,18 +177,18 @@ class ElnStepCreationHandler(AbstractWebhookHandler):
         active_protocol: Optional[ElnExperimentProtocol] = context.active_protocol
 
         # We will create a Request form.
-        request_record = context.data_record_manager.add_data_record('Request')
-        request_record.set_field_value('RequestId', 'Python Webhook Demo Request ' + str(date.today()))
+        request_record = context.data_record_manager.add_data_record("Request")
+        request_record.set_field_value("RequestId", "Python Webhook Demo Request " + str(date.today()))
 
         context.data_record_manager.commit_data_records([request_record])
 
-        ELNStepFactory.create_form_step(active_protocol, 'Request Data', 'Request', request_record)
+        ELNStepFactory.create_form_step(active_protocol, "Request Data", "Request", request_record)
 
         # Now, create another empty sample table under request form. This will be created after the last form.
         # Note: the cache for protocol provided is invalidated upon creating a new step,
         # but any other protocol references to the same protocol will not.
-        ELNStepFactory.create_table_step(active_protocol, 'Samples', 'Sample')
-        ELNStepFactory.create_text_entry(active_protocol, 'Hello World!')
+        ELNStepFactory.create_table_step(active_protocol, "Samples", "Sample")
+        ELNStepFactory.create_text_entry(active_protocol, "Hello World!")
 
         return SapioWebhookResult(True)
 
@@ -187,27 +202,25 @@ class ElnSampleCreationHandler(AbstractWebhookHandler):
         active_protocol: Optional[ElnExperimentProtocol] = context.active_protocol
 
         # Get the first entry which has records of type Sample
-        sample_step = active_protocol.get_first_step_of_type('Sample')
+        sample_step = active_protocol.get_first_step_of_type("Sample")
         if sample_step is None:
             # Create the sample step if it doesn't exist
-            sample_step = ELNStepFactory.create_table_step(active_protocol, 'Samples', 'Sample')
+            sample_step = ELNStepFactory.create_table_step(active_protocol, "Samples", "Sample")
 
         sample_fields: List[Dict[str, Any]] = []
         num_samples = 8
         accession_man: FoundationAccessionManager = FoundationAccessionManager(context.user)
-        sample_id_list: List[str] = accession_man.get_accession_with_config_list('Sample', 'SampleId', num_samples)
+        sample_id_list: List[str] = accession_man.get_accession_with_config_list("Sample", "SampleId", num_samples)
 
         # We're creating samples with ExemplarSampleType=Blood and with the ids accessioned above
         for sample_id in sample_id_list:
-            sample_field = {
-                'ExemplarSampleType': 'Blood',
-                'SampleId': sample_id
-            }
+            sample_field = {"ExemplarSampleType": "Blood", "SampleId": sample_id}
             sample_fields.append(sample_field)
 
-        sample_records = context.data_record_manager.add_data_records_with_data('Sample', sample_fields)
-        context.eln_manager.add_records_to_table_entry(active_protocol.eln_experiment.notebook_experiment_id,
-                                                       sample_step.eln_entry.entry_id, sample_records)
+        sample_records = context.data_record_manager.add_data_records_with_data("Sample", sample_fields)
+        context.eln_manager.add_records_to_table_entry(
+            active_protocol.eln_experiment.notebook_experiment_id, sample_step.eln_entry.entry_id, sample_records
+        )
         return SapioWebhookResult(True)
 
 
@@ -219,14 +232,15 @@ class BarChartDashboardCreationHandler(AbstractWebhookHandler):
     def run(self, context: SapioWebhookContext) -> SapioWebhookResult:
         active_protocol: Optional[ElnExperimentProtocol] = context.active_protocol
 
-        sample_step: Optional[ElnEntryStep] = active_protocol.get_first_step_of_type('Sample')
+        sample_step: Optional[ElnEntryStep] = active_protocol.get_first_step_of_type("Sample")
 
         # Check if the sample step exists
         if sample_step is None:
             return SapioWebhookResult(True, display_text="There are no sample step. Create it first.")
 
-        ELNStepFactory.create_bar_chart_step(active_protocol, sample_step, "Concentration vs Sample ID",
-                                             "SampleId", "Concentration")
+        ELNStepFactory.create_bar_chart_step(
+            active_protocol, sample_step, "Concentration vs Sample ID", "SampleId", "Concentration"
+        )
 
         return SapioWebhookResult(True)
 
@@ -236,6 +250,7 @@ class AddInstrumentTracking(AbstractWebhookHandler):
     Adds an Instrument Tracking Field Set to the experiment.
     Invoked by a toolbar button.
     """
+
     INSTRUMENT_TRACKING_NAME = "Instrument Tracking Field Set"
 
     INSTRUMENT_TRACKING_FIELD_SET_ID = 109
@@ -278,9 +293,7 @@ class AutoCompleteFirstEntry(AbstractWebhookHandler):
     """
 
     def run(self, context: SapioWebhookContext) -> SapioWebhookResult:
-        protocol: ElnExperimentProtocol | None = cast(
-            ElnExperimentProtocol | None, context.active_protocol
-        )
+        protocol: ElnExperimentProtocol | None = cast(ElnExperimentProtocol | None, context.active_protocol)
 
         if protocol is None:
             msg = "Error: Protocol was None"
@@ -292,9 +305,7 @@ class AutoCompleteFirstEntry(AbstractWebhookHandler):
         # index 1 not 0 because experiments have a hidden first entry, Experiment Overview
         first_entry = entry_list[1]
 
-        first_entry_update_criteria = (
-            ExperimentEntryCriteriaUtil.create_empty_criteria(first_entry)
-        )
+        first_entry_update_criteria = ExperimentEntryCriteriaUtil.create_empty_criteria(first_entry)
 
         first_entry_update_criteria.entry_status = ExperimentEntryStatus.Completed
 
@@ -302,9 +313,7 @@ class AutoCompleteFirstEntry(AbstractWebhookHandler):
 
         first_entry_id = first_entry.entry_id
 
-        context.eln_manager.update_experiment_entry(
-            exp_id, first_entry_id, first_entry_update_criteria
-        )
+        context.eln_manager.update_experiment_entry(exp_id, first_entry_id, first_entry_update_criteria)
 
         return SapioWebhookResult(True)
 
@@ -313,6 +322,7 @@ class AddRecords(AbstractWebhookHandler):
     """
     This webhook adds records to a table in the experiment its invoked on.
     """
+
     DATA_TYPE = "Data Type"
     NUMBER = "Number"
 
@@ -321,7 +331,6 @@ class AddRecords(AbstractWebhookHandler):
     CANCEL = "Cancel"
 
     def run(self, context: SapioWebhookContext) -> SapioWebhookResult:
-
         # Step 1: Display a form and ask the user to choose a data type
         data_type_name = self.__prompt_for_data_type(context)
 
@@ -342,9 +351,7 @@ class AddRecords(AbstractWebhookHandler):
             if num_records is None:
                 return self.user_cancelled()
 
-            records: list[DataRecord] = context.data_record_manager.add_data_records(
-                data_type_name, num_records
-            )
+            records: list[DataRecord] = context.data_record_manager.add_data_records(data_type_name, num_records)
 
             self.__add_records_to_table(context, records, data_type_name)
 
@@ -368,7 +375,6 @@ class AddRecords(AbstractWebhookHandler):
         )
 
     def __prompt_for_data_type(self, context: SapioWebhookContext) -> str | None:
-
         data_type_manager = DataMgmtServer.get_data_type_manager(context.user)
         data_type_internal_names = data_type_manager.get_data_type_name_list()
 
@@ -410,7 +416,6 @@ class AddRecords(AbstractWebhookHandler):
         return data_type_internal_names[data_type_idx]
 
     def __prompt_for_new_or_existing(self, context: SapioWebhookContext) -> str | None:
-
         # These options may be displayed in the reverse order.
         # This can be controlled by a user theme setting.
         options = [self.CANCEL, self.NEW, self.EXISTING]
@@ -455,9 +460,7 @@ class AddRecords(AbstractWebhookHandler):
     @staticmethod
     def __prompt_for_existing_records(context: SapioWebhookContext, data_type_name: str) -> list[int] | None:
         data_type_cache_manager = RecordModelManager(context.user).data_type_cache_manager
-        data_type_plural_display_name = data_type_cache_manager.get_plural_display_name(
-            data_type_name
-        )
+        data_type_plural_display_name = data_type_cache_manager.get_plural_display_name(data_type_name)
 
         data_record_manager = context.data_record_manager
 
@@ -514,9 +517,7 @@ class AddRecords(AbstractWebhookHandler):
             # Place the table at the end of the experiment
             table_position = len(protocol.get_sorted_step_list()) + 1
 
-            new_table_entry_criteria = ElnEntryCriteria(
-                ElnEntryType.Table, table_name, data_type_name, table_position
-            )
+            new_table_entry_criteria = ElnEntryCriteria(ElnEntryType.Table, table_name, data_type_name, table_position)
 
             table = eln_manager.add_experiment_entry(experiment_id, new_table_entry_criteria)
 
@@ -623,17 +624,17 @@ class CheckNumberOfSamples(AbstractWebhookHandler):
 # In this example, we are listening to 8090. So the endpoint URL to be configured in Sapio is:
 # http://[webhook_server_hostname]:8090/hello_world
 config: WebhookConfiguration = WebhookConfiguration(verify_sapio_cert=False, debug=True)
-config.register('/hello_world', HelloWorldWebhookHandler)
-config.register('/feedback_form', UserFeedbackHandler)
-config.register('/new_goo', NewGooOnSaveRuleHandler)
-config.register('/eln/rule_test', ExperimentRuleHandler)
-config.register('/eln/sample_aliquot_count', ElnSampleAliquotRatioCountHandler)
-config.register('/eln/create_new_steps', ElnStepCreationHandler)
-config.register('/eln/sample_creation', ElnSampleCreationHandler)
-config.register('/eln/bar_chart_creation', BarChartDashboardCreationHandler)
-config.register('/eln/add_instrument_tracking', AddInstrumentTracking)
-config.register('/eln/autocomplete_first_entry', AutoCompleteFirstEntry)
-config.register('/eln/check_number_samples', CheckNumberOfSamples)
+config.register("/hello_world", HelloWorldWebhookHandler)
+config.register("/feedback_form", UserFeedbackHandler)
+config.register("/new_goo", NewGooOnSaveRuleHandler)
+config.register("/eln/rule_test", ExperimentRuleHandler)
+config.register("/eln/sample_aliquot_count", ElnSampleAliquotRatioCountHandler)
+config.register("/eln/create_new_steps", ElnStepCreationHandler)
+config.register("/eln/sample_creation", ElnSampleCreationHandler)
+config.register("/eln/bar_chart_creation", BarChartDashboardCreationHandler)
+config.register("/eln/add_instrument_tracking", AddInstrumentTracking)
+config.register("/eln/autocomplete_first_entry", AutoCompleteFirstEntry)
+config.register("/eln/check_number_samples", CheckNumberOfSamples)
 
 app = WebhookServerFactory.configure_flask_app(app=None, config=config)
 # UNENCRYPTED! This should not be used in production. You should give the "app" a ssl_context or set up a reverse-proxy.
