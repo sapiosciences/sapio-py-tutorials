@@ -25,7 +25,6 @@ from sapiopylib.rest.pojo.webhook.ClientCallbackRequest import (
 from sapiopylib.rest.pojo.webhook.WebhookContext import SapioWebhookContext
 from sapiopylib.rest.pojo.webhook.WebhookResult import SapioWebhookResult
 from sapiopylib.rest.utils.FormBuilder import FormBuilder
-from sapiopylib.rest.utils.FoundationAccessioning import FoundationAccessionManager
 from sapiopylib.rest.utils.ProtocolUtils import ELNStepFactory
 from sapiopylib.rest.utils.Protocols import ElnEntryStep, ElnExperimentProtocol
 from sapiopylib.rest.utils.recordmodel.RecordModelManager import RecordModelManager
@@ -208,14 +207,6 @@ class ElnSampleCreationHandler(AbstractWebhookHandler):
             sample_step = ELNStepFactory.create_table_step(active_protocol, "Samples", "Sample")
 
         sample_fields: List[Dict[str, Any]] = []
-        num_samples = 8
-        accession_man: FoundationAccessionManager = FoundationAccessionManager(context.user)
-        sample_id_list: List[str] = accession_man.get_accession_with_config_list("Sample", "SampleId", num_samples)
-
-        # We're creating samples with ExemplarSampleType=Blood and with the ids accessioned above
-        for sample_id in sample_id_list:
-            sample_field = {"ExemplarSampleType": "Blood", "SampleId": sample_id}
-            sample_fields.append(sample_field)
 
         sample_records = context.data_record_manager.add_data_records_with_data("Sample", sample_fields)
         context.eln_manager.add_records_to_table_entry(
