@@ -56,12 +56,9 @@ The following dependencies are required for this package:
 All documentations, including code examples and installation guide, are provided at [our sapiopylib tutorial github](https://github.com/sapiosciences/sapio-py-tutorials).
 
 ## Getting Help
-If you have support contract with Sapio Sciences, please use our [technical support channels](https://sapio-sciences.atlassian.net/servicedesk/customer/portals).
+If you have support contract with Sapio Sciences, or to report an issue with sapiopylib, please use our [technical support channels](https://sapio-sciences.atlassian.net/servicedesk/customer/portals).
 
 If you have any questions about how to use sapiopylib, please visit our tutorial page.
-
-If you would like to report an issue on sapiopylib, or its tutorial content, please feel free to create a issue ticket at the tutorial github.
-
 ## About Us
 Sapio is at the forefront of the Digital Lab with its science-aware platform for managing all your life science data with its integrated Electronic Lab Notebook, LIMS Software and Scientific Data Management System.
 
