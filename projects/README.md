@@ -18,6 +18,6 @@ library versions that match your Sapio system.
 ### Testing and Deploying
 Running a project's server.py starts a local webhook server. Sapio needs network access to that server to call it. If
 your machine is on a separate network from the Sapio server, use a tunneling service such as
-[ngrok](https://ngrok.com/) (`ngrok http 8090` for the exercise project, or 8080 for the default project), or ask your
+[ngrok](https://ngrok.com/) (`ngrok http 8080`), or ask your
 IT team to make your machine available. Each project's Dockerfile can build the project into an image for permanent
 deployment.

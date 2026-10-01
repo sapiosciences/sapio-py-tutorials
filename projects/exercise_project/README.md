@@ -45,7 +45,7 @@ available to the Sapio server.
 
 If your local machine is on a separate network, you will need to use a tunneling/port forwarding service to make your
 webhooks available to the Sapio server. Sapio's developers currently utilize [ngrok](https://ngrok.com/) for this
-purpose. Once installed, you can run `ngrok http 8090` from a terminal to start an ngrok instance. The final value in
+purpose. Once installed, you can run `ngrok http 8080` from a terminal to start an ngrok instance. The final value in
 the command is the port that the ngrok instance will make available, which should match the port in the server.py file.
 Going to http://localhost:4040 in your browser while an ngrok instance is running will allow you to review the requests
 that the Sapio server makes to your webhook server, including displaying the JSON of the requests. This can be a useful

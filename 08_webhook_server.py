@@ -612,8 +612,8 @@ class CheckNumberOfSamples(AbstractWebhookHandler):
 
 
 # Note: the registration points here are directly under root.
-# In this example, we are listening to 8090. So the endpoint URL to be configured in Sapio is:
-# http://[webhook_server_hostname]:8090/hello_world
+# In this example, we are listening to 8080. So the endpoint URL to be configured in Sapio is:
+# http://[webhook_server_hostname]:8080/hello_world
 config: WebhookConfiguration = WebhookConfiguration(verify_sapio_cert=False, debug=True)
 config.register("/hello_world", HelloWorldWebhookHandler)
 config.register("/feedback_form", UserFeedbackHandler)
@@ -631,10 +631,10 @@ app = WebhookServerFactory.configure_flask_app(app=None, config=config)
 # UNENCRYPTED! This should not be used in production. You should give the "app" a ssl_context or set up a reverse-proxy.
 
 # Dev Mode:
-# app.run(host="0.0.0.0", port=8090)
+# app.run(host="0.0.0.0", port=8080)
 
 # Production Mode
-serve(app, host="0.0.0.0", port=8090)
+serve(app, host="0.0.0.0", port=8080)
 
 # For performance reasons, we recommend using gunicorn. If you have gunicorn installed:
 # Run "gunicorn server:app"

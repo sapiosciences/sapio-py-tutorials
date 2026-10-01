@@ -75,7 +75,7 @@ def health_check():
 # meaning that changes to the below code will not affect a deployed webhook server.
 if __name__ == '__main__':
     host = "0.0.0.0"
-    port = 8090
+    port = 8080
     # You can set this environment variable to true on your local machine
     # to change this behavior when you run the server locally.
     if os.environ.get('SapioWebhooksDebug') == "True":
