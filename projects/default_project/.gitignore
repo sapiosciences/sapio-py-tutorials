@@ -1,0 +1,10 @@
+# https://github.com/github/gitignore/blob/main/Python.gitignore
+.idea/
+venv
+*.pyc
+*.pyo
+__pycache__/
+*.log
+
+# for aws profile etc
+local.yml

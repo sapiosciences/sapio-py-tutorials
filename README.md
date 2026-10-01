@@ -1,5 +1,5 @@
 
-# sapiopylib: Official Sapio Informatics Platform Python API
+# Sapio Python Tutorials: sapiopylib and sapiopycommons
 
 <div align="center"><a href="https://www.sapiosciences.com" target="_blank">
   <img src="https://s3.amazonaws.com/public.exemplareln.com/sapio-pylib/sapio-sciencesofficial-python-api-library.png" alt="Sapio Sciences"><br>
@@ -8,33 +8,67 @@
 -----------------
 [![PyPI Latest Release](https://img.shields.io/pypi/v/sapiopylib.svg)](https://pypi.org/project/sapiopylib/) [![License](https://img.shields.io/pypi/l/sapiopylib.svg)](https://github.com/sapiosciences/sapio-py-tutorials/blob/master/LICENSE) [![Issues](https://img.shields.io/github/issues/sapiosciences/sapio-py-tutorials)](https://github.com/sapiosciences/sapio-py-tutorials/issues)
 
-## What is it?
-sapiopylib is a powerful Python package, developed and maintained by Sapio Sciences, that provides the ability to create endpoints to manipulate data and make configuration changes within the Sapio lab informatics platform in a quick and straightforward manner.
+## What is this repository?
+This repository is the starting point for working with Sapio's Python libraries. It covers the basics of interacting
+with the Sapio Informatics Platform from Python, rather than being a comprehensive overview of the entire webservice
+API. It contains:
 
-The package makes it easy to automate changes to and queries of different types of data in the system, ranging from records to notebooks and the entries within them. Intuitive datatypes, such as record models that allow for simple manipulation of data records and their fields, within the package help to make development nearly as straightforward as performing the same tasks in the application.
+* [00_installation.ipynb](00_installation.ipynb) and [01_api_authentication.ipynb](01_api_authentication.ipynb). The
+  authentication notebook explains API users, API keys, and bearer tokens.
+* Jupyter notebooks (`02_query_data_records` through `11_user_management`) that walk through querying and manipulating
+  records, reports, picklists, ELN experiments, data types, record models, and user management.
+* [projects/default_project](projects/default_project): the project to copy when you start a new webhook project.
+* [projects/exercise_project](projects/exercise_project): examples and exercises for learning how to write webhooks.
+* `08_webhook_server.py`: a single-file webhook server example.
 
-As well as serving as the most direct way to programmatically alter data in the application, sapiopylib makes it possible to create endpoints to alter and query configurations in the system. Configurations for system data types, lists used by the system, and more can be easily accessed using this package.
+Start with [00_installation.ipynb](00_installation.ipynb), then [01_api_authentication.ipynb](01_api_authentication.ipynb).
+
+## The Two Python Packages
+Sapio publishes two Python packages on PyPI. Both are open for use by customers and partners.
+
+| Package | What it is |
+|---|---|
+| [sapiopylib](https://pypi.org/project/sapiopylib/) | The Python SDK that wraps the platform's webservice (REST) API. It provides classes for records, record models, ELN experiments, reports, data types, users, and the building blocks for writing webhook servers. |
+| [sapiopycommons](https://pypi.org/project/sapiopycommons/) | A utilities library built on top of sapiopylib. It contains higher-level helpers that make common tasks shorter, such as webhook handler base classes, callback and record helpers, and time utilities. |
+
+**You only need to install sapiopycommons.** It depends on sapiopylib, so installing sapiopycommons also installs the
+matching sapiopylib. Install sapiopylib on its own only if you want just the SDK and none of the utilities.
+
+```sh
+pip install sapiopycommons
+```
+
+## Choosing a Version
+* Both packages receive a new release for every major platform version, even when the webservice API has not changed
+  in that time. Pick the sapiopycommons release whose version ends with your Sapio system's version. For example, if
+  your system is on 26.8, install sapiopycommons 38.0.1.26.8:
+  ```sh
+  pip install sapiopycommons==38.0.1.26.8
+  ```
+  Browse the [sapiopycommons release history](https://pypi.org/project/sapiopycommons/#history) to find the release for
+  your system's version.
+* Sapio maintains backwards compatibility between versions. If active development on your webhooks or webservice API
+  integrations has stopped, it is not strictly necessary to update the Python libraries when your platform is upgraded.
+* The `prior_releases/*` branches of this repository were created for older platform versions and are no longer
+  updated. Versions are now selected as described above.
+
+## About the API Documentation
+* The webservice API is a language-agnostic REST API, and sapiopylib is a wrapper around it. You can call the API from
+  any language.
+* The REST API changes rarely, and when it does it is usually because a new endpoint was added.
+* The full API documentation for your system is at App Setup -> Manage Rules & Webhooks -> Webservice API ->
+  Webservice Documentation. It is generated by your own system, so it always matches what that system is capable of,
+  including any new endpoints. From that page you can generate an MCP for the webservice, or download an OpenAPI spec.
+* The notebooks and examples in this repository cover the basics. None of the basic endpoints they demonstrate have
+  changed, which is why individual files may not have been updated recently.
 
 ## Main Features
-Here is a list of major features in this library:
+Here is a list of major features in sapiopylib:
 - Support all Sapio REST API functions.
 - Manipulate data records with record models using client-based caching. This allows you to batch requests easily for performance. Making your changes in mini-batch is also provides transactional commits outside of a webhook context for data record changes.
 - Create new temporary data types easily with FormBuilder utility.
 - Provides Protocol-Step API as we have defined in Sapio Java API.
 - Supports creation of a Flask-based webhook server. Implement additional toolbar buttons, rules, validation logic to customize your ELN experiment, workflows, and user interface.
-
-## Where to get it?
-Installation is simple:
-```sh
-pip install sapiopylib
-```
-However, you may need to pay attention to the library version to ensure it is compatible with your Sapio Informatics Platform.
-
-The correct versions for each platform can be found under the tutorial github. The github will create a branch under 'prior_releases' folder when a specific sapiopylib is made against a platform release. The installation manual inside the tutorial, with the correct branch checked out, will make a reference to the exact version you should install for that platform.
-
-Pre-releases will reference the bleeding-edge non-GA Sapio Platform.
-
-The latest release of sapiopylib marked with final status will reference the latest GA Sapio Platform.
 
 ## Licenses
 sapiopylib along with its tutorials in the github are licensed under MPL 2.0.
@@ -43,7 +77,7 @@ pypi.org is granted the right to distribute sapiopylib forever.
 This license does not provide any rights to use any other copyrighted artifacts from Sapio Sciences. (And they are typically written in another programming language with no linkages to this library.)
 
 ## Dependencies
-The following dependencies are required for this package:
+The following dependencies are required for sapiopylib:
 - [requests - Requests is an Apache2 Licensed HTTP library, written in Python, for human beings.](https://pypi.org/project/requests/2.7.0/)
 - [pandas - pandasis a fast, powerful, flexible and easy to use open source data analysis and manipulation tool,  
   built on top of the Python programming language.](https://pandas.pydata.org/)
@@ -52,13 +86,13 @@ The following dependencies are required for this package:
 - [plotly.py - An open-source, interactive data visualization library for Python](https://pypi.org/project/plotly/)
 - [kaleido - Static image export for web-based visualization libraries with zero dependencies](https://pypi.org/project/kaleido/)
 
-## Documentation
-All documentations, including code examples and installation guide, are provided at [our sapiopylib tutorial github](https://github.com/sapiosciences/sapio-py-tutorials).
+sapiopycommons additionally depends on sapiopylib itself.
 
 ## Getting Help
-If you have support contract with Sapio Sciences, or to report an issue with sapiopylib, please use our [technical support channels](https://sapio-sciences.atlassian.net/servicedesk/customer/portals).
+If you have support contract with Sapio Sciences, or to report an issue with sapiopylib or sapiopycommons, please use our [technical support channels](https://sapio-sciences.atlassian.net/servicedesk/customer/portals).
 
-If you have any questions about how to use sapiopylib, please visit our tutorial page.
+If you have any questions about how to use these libraries, please start with the notebooks in this repository.
+
 ## About Us
 Sapio is at the forefront of the Digital Lab with its science-aware platform for managing all your life science data with its integrated Electronic Lab Notebook, LIMS Software and Scientific Data Management System.
 
